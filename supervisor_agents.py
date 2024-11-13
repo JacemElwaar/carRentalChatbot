@@ -2,16 +2,15 @@ from transformers import pipeline
 from collections import defaultdict
 from agentes import location_agent, availability_agent, pricing_agent
 
-# Use Hugging Face's zero-shot classification for dynamic intent detection
+# Multi-label zero-shot classifier setup
 intent_classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
-INTENTS = ["location", "availability", "pricing", "unknown"]
+INTENTS = ["location", "availability", "pricing"]
 
 class UserSession:
     def __init__(self):
         self.context = defaultdict(str)
-    
-    
-    # sesison bigger than this one 
+        self.completed_tasks = set()  # Track which agents have been used
+
     def update_context(self, key, value):
         self.context[key] = value
 
@@ -24,46 +23,54 @@ class EnhancedSupervisorAgent:
 
     def route_request(self, user_input, user_id):
         session = self.sessions[user_id]
-        intent = self.identify_intent(user_input)
+        
+        # Identify multiple intents with multi-label classification
+        intents = self.identify_intents(user_input)
 
-        # Update session context
-        session.update_context("last_user_input", user_input)
-
-        # Route request based on intent and provide context-aware responses
-        if intent == "location":
-            response = self.location_agent.run({"location": user_input})
-            session.update_context("last_response", response)
-            return response
-        elif intent == "availability":
-            # Retrieve dates from context or fallback to user input
+        responses = []
+        # Trigger agents based on detected intents
+        if "location" in intents and "location" not in session.completed_tasks:
+            location_response = self.location_agent.run({"location": user_input})
+            session.update_context("location", location_response)
+            responses.append(location_response)
+            session.completed_tasks.add("location")
+        
+        if "availability" in intents and "availability" not in session.completed_tasks:
+            # Use context information or fallbacks
             start_date = session.context.get("start_date", "today")
             end_date = session.context.get("end_date", "tomorrow")
-            response = self.availability_agent.run({"start_date": start_date, "end_date": end_date})
-            session.update_context("last_response", response)
-            return response
-        elif intent == "pricing":
-            # Retrieve location, dates, and car type from context or fallback to user input
+            availability_response = self.availability_agent.run({
+                "start_date": start_date,
+                "end_date": end_date
+            })
+            session.update_context("availability", availability_response)
+            responses.append(availability_response)
+            session.completed_tasks.add("availability")
+
+        if "pricing" in intents and "pricing" not in session.completed_tasks:
+            # Use context or default values
             location = session.context.get("location", "unspecified location")
             start_date = session.context.get("start_date", "today")
             end_date = session.context.get("end_date", "tomorrow")
             car_type = session.context.get("car_type", "sedan")
-            response = self.pricing_agent.run({"location": location, "start_date": start_date, "end_date": end_date, "car_type": car_type})
-            session.update_context("last_response", response)
-            return response
-        else:
-            # Fallback response if intent is unknown
-            return "Lo siento, no pude entender tu solicitud. ¿Podrías reformularla, por favor?"
+            pricing_response = self.pricing_agent.run({
+                "location": location,
+                "start_date": start_date,
+                "end_date": end_date,
+                "car_type": car_type
+            })
+            session.update_context("pricing", pricing_response)
+            responses.append(pricing_response)
+            session.completed_tasks.add("pricing")
 
-    def identify_intent(self, user_input):
-        # Use zero-shot classifier to identify intent with Hugging Face
-        result = intent_classifier(user_input, candidate_labels=INTENTS)
-        top_intent = result["labels"][0]
-        return top_intent if result["scores"][0] > 0.8 else "unknown"  # Confidence threshold of 0.8
+        # Combine all agent responses for the user
+        return " ".join(responses)
 
-# Initialize the supervisor agent with the agents
+    def identify_intents(self, user_input):
+        # Perform multi-label classification with confidence threshold
+        result = intent_classifier(user_input, candidate_labels=INTENTS, multi_label=True)
+        detected_intents = [intent for intent, score in zip(result["labels"], result["scores"]) if score > 0.6]  # Set threshold as needed
+        return detected_intents
+
+# Initialize the supervisor agent with each specific agent
 supervisor_agent = EnhancedSupervisorAgent(location_agent, availability_agent, pricing_agent)
-
-
-
-
-
