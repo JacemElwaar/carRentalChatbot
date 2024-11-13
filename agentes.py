@@ -36,5 +36,10 @@ location_agent = LLMChain(prompt=localization_prompt, llm=llm)
 availability_agent = LLMChain(prompt=availability_prompt, llm=llm)
 pricing_agent = LLMChain(prompt=pricing_prompt, llm=llm)
 
+
+
+#--> prompts (fetchAgent) =>  doing the queries => api  
+
+
 # Exportar los agentes
 __all__ = ["location_agent", "availability_agent", "pricing_agent"]

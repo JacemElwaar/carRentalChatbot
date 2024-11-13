@@ -1,0 +1,25 @@
+    Good observation! Static communication between the planner and agents does have its limitations, especially in complex workflows. Adding dynamic prompt engineering can improve the adaptability, flexibility, and effectiveness of interactions within a multi-agent system.
+
+    Here’s a breakdown of when to use static versus dynamic communication, and how prompt engineering could enhance your setup:
+
+1. Static vs. Dynamic Communication
+    - Static Communication:
+
+        Advantages: Easier to set up, predictable behavior, and typically faster since the prompts and workflows are predefined.
+
+        Limitations: Lacks adaptability for complex or unstructured queries, may not scale well with new types of tasks, and is rigid when the requirements evolve.
+
+    - Dynamic Communication:
+        - Advantages: Allows the planner to adapt prompts based on context, intermediate results, or changes in user needs. This is more flexible and capable of handling complex, multi-step tasks.
+
+        - Limitations: Requires more sophisticated engineering (like prompt generation logic and context tracking) and may have a higher computational cost.
+
+2. Adding Prompt Engineering for Dynamic Interactions
+    By using prompt engineering, the planner can dynamically adapt prompts to better interact with each agent. Here’s how you can achieve this:
+
+    Dynamic Prompt Templates: Use templates that allow the planner to build prompts on the fly based on query context and previous agent responses. For example:
+        - If the location_agent finds multiple locations, dynamically adjust the availability_agent prompt to ask for availability across multiple locations.
+        - If availability_agent finds no cars for the requested date range, the planner could prompt the pricing_agent to suggest alternative dates or vehicles.
+
+    Intermediate Context Tracking: Keep track of intermediate responses in a context dictionary that dynamically updates prompts. This allows agents to have context-aware interactions.
+    Multi-Step Query Planning: For queries that require a chain of decisions, the planner can dynamically choose which agent to call next and how to frame the prompt based on previous responses. This is useful if, for example, a price quote is only relevant if availability is confirmed.
