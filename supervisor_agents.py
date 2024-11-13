@@ -10,6 +10,8 @@ class UserSession:
     def __init__(self):
         self.context = defaultdict(str)
     
+    
+    # sesison bigger than this one 
     def update_context(self, key, value):
         self.context[key] = value
 
@@ -60,3 +62,8 @@ class EnhancedSupervisorAgent:
 
 # Initialize the supervisor agent with the agents
 supervisor_agent = EnhancedSupervisorAgent(location_agent, availability_agent, pricing_agent)
+
+
+
+
+
