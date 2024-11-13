@@ -1,0 +1,5 @@
+=> basicaly after a kind of reflection we set up to be more between intent detection and decision workflow so we decided to be in between of the both of them this kind of logic can be done by doing this: 
+
+- State Graph: Defines the possible states in the conversation and the allowed transitions, enforcing a logical flow in the interactions.
+- EnhancedSupervisorAgent: Manages routing based on the user's current state, maintains user context, and interacts with the agents.
+- Multi-Intent Detection: Identifies which agents to trigger based on user input and dynamically routes requests accordingly.

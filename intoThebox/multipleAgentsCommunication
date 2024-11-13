@@ -1,0 +1,91 @@
+1. Basic Communication Flow: 
+    - Planner to Agents: The planner sends specific inputs to each agent based on the query requirements.
+    - Agents to Planner: Each agent responds back to the planner after processing the request.
+    - Multiple Agents: The planner should be able to coordinate queries across multiple agents, 
+    handling interdependencies and aggregating the results.
+
+
+2. Steps to Implement the Planner and Agent Workflow
+Below are the key steps to design a planner that can manage queries with multiple agents:
+
+    1 Receive and Analyze User Input: 
+    The planner receives a user query and determines which agents need to be involved based on the query content. For example:
+    - Location-Based Query: Directly route to location_agent. 
+    - Availability and Price Query: Route to both availability_agent and pricing_agent.
+
+    2 Define Query Flow (Sequence and Parallel Processing):
+        For queries that involve multiple agents, the planner decides if they should be processed in sequence (chained) or in parallel.
+    
+    - Sequential Processing: One agent’s result is used as input for the next (e.g., first checking availability before pricing).
+    - Parallel Processing: Agents can work independently on parts of the query, with results aggregated afterward.
+
+    3 Aggregate and Format Results: After receiving responses from the agents, the planner combines them into a single, cohesive response for the user.
+
+
+
+
+from transformers import pipeline
+from collections import defaultdict
+from agentes import location_agent, availability_agent, pricing_agent
+
+# Use Hugging Face's zero-shot classification for dynamic intent detection
+intent_classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+INTENTS = ["location", "availability", "pricing", "unknown"]
+
+class UserSession:
+    def __init__(self):
+        self.context = defaultdict(str)
+    
+    
+    # sesison bigger than this one 
+    def update_context(self, key, value):
+        self.context[key] = value
+
+class EnhancedSupervisorAgent:
+    def __init__(self, location_agent, availability_agent, pricing_agent):
+        self.location_agent = location_agent
+        self.availability_agent = availability_agent
+        self.pricing_agent = pricing_agent
+        self.sessions = defaultdict(UserSession)
+
+    def route_request(self, user_input, user_id):
+        session = self.sessions[user_id]
+        intent = self.identify_intent(user_input)
+
+        # Update session context
+        session.update_context("last_user_input", user_input)
+
+        # Route request based on intent and provide context-aware responses
+        if intent == "location":
+            response = self.location_agent.run({"location": user_input})
+            session.update_context("last_response", response)
+            return response
+        elif intent == "availability":
+            # Retrieve dates from context or fallback to user input
+            start_date = session.context.get("start_date", "today")
+            end_date = session.context.get("end_date", "tomorrow")
+            response = self.availability_agent.run({"start_date": start_date, "end_date": end_date})
+            session.update_context("last_response", response)
+            return response
+        elif intent == "pricing":
+            # Retrieve location, dates, and car type from context or fallback to user input
+            location = session.context.get("location", "unspecified location")
+            start_date = session.context.get("start_date", "today")
+            end_date = session.context.get("end_date", "tomorrow")
+            car_type = session.context.get("car_type", "sedan")
+            response = self.pricing_agent.run({"location": location, "start_date": start_date, "end_date": end_date, "car_type": car_type})
+            session.update_context("last_response", response)
+            return response
+        else:
+            # Fallback response if intent is unknown
+            return "Lo siento, no pude entender tu solicitud. ¿Podrías reformularla, por favor?"
+
+    def identify_intent(self, user_input):
+        # Use zero-shot classifier to identify intent with Hugging Face
+        result = intent_classifier(user_input, candidate_labels=INTENTS)
+        top_intent = result["labels"][0]
+        return top_intent if result["scores"][0] > 0.8 else "unknown"  # Confidence threshold of 0.8
+
+# Initialize the supervisor agent with the agents
+supervisor_agent = EnhancedSupervisorAgent(location_agent, availability_agent, pricing_agent)
+==> this is what I have for the moment make changes on my code EnhancedSupervisorAgent is the planner.
