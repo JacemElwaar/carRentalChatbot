@@ -97,5 +97,3 @@ class SupervisorAgent:
         detected_intents = [intent for intent, score in zip(result["labels"], result["scores"]) if score > 0.6]  # Set threshold as needed
         return detected_intents
 
-# Initialize the supervisor agent with each specific agent (although not used here due to commenting out)
-supervisor_agent = SupervisorAgent(location_agent, availability_agent, pricing_agent)
