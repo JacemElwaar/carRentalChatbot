@@ -1,6 +1,5 @@
 from transformers import pipeline
 from collections import defaultdict
-from agentes import location_agent, availability_agent, pricing_agent
 from stateGraph import StateGraph  # Import the StateGraph from the separate file
 
 # Multi-label zero-shot classifier setup
@@ -26,10 +25,10 @@ class UserSession:
         return False
 
 class SupervisorAgent:
-    def __init__(self, location_agent, availability_agent, pricing_agent):
-        self.location_agent = location_agent
-        self.availability_agent = availability_agent
-        self.pricing_agent = pricing_agent
+    def __init__(self):
+        #self.location_agent = location_agent
+        #self.availability_agent = availability_agent
+        #self.pricing_agent = pricing_agent
         self.sessions = defaultdict(lambda: UserSession(StateGraph()))  # Each session gets its own UserSession with StateGraph
 
     def route_request(self, user_input, user_id):
@@ -37,28 +36,35 @@ class SupervisorAgent:
         
         # Identify multiple intents with multi-label classification
         intents = self.identify_intents(user_input)
+        print(f"Detected intents for user '{user_id}': {intents}")  # Log detected intents
 
         responses = []
         # Trigger agents based on detected intents and state transitions
         for intent in intents:
             if intent == "location" and "location" not in session.completed_tasks:
                 if session.transition_state("location"):
-                    location_response = self.location_agent.run({"location": user_input})
+                    # Commenting out the agent call
+                    # location_response = self.location_agent.run({"location": user_input})
+                    location_response = f"Simulated location response for intent: {intent}"
                     session.update_context("location", location_response)
                     responses.append(location_response)
                     session.completed_tasks.add("location")
+                    print(f"Session context updated with location: {session.context}")  # Log context update
             
             elif intent == "availability" and "availability" not in session.completed_tasks:
                 if session.transition_state("availability"):
                     start_date = session.context.get("start_date", "today")
                     end_date = session.context.get("end_date", "tomorrow")
-                    availability_response = self.availability_agent.run({
-                        "start_date": start_date,
-                        "end_date": end_date
-                    })
+                    # Commenting out the agent call
+                    # availability_response = self.availability_agent.run({
+                    #     "start_date": start_date,
+                    #     "end_date": end_date
+                    # })
+                    availability_response = f"Simulated availability response for intent: {intent}"
                     session.update_context("availability", availability_response)
                     responses.append(availability_response)
                     session.completed_tasks.add("availability")
+                    print(f"Session context updated with availability: {session.context}")  # Log context update
 
             elif intent == "pricing" and "pricing" not in session.completed_tasks:
                 if session.transition_state("pricing"):
@@ -66,15 +72,22 @@ class SupervisorAgent:
                     start_date = session.context.get("start_date", "today")
                     end_date = session.context.get("end_date", "tomorrow")
                     car_type = session.context.get("car_type", "sedan")
-                    pricing_response = self.pricing_agent.run({
-                        "location": location,
-                        "start_date": start_date,
-                        "end_date": end_date,
-                        "car_type": car_type
-                    })
+                    # Commenting out the agent call
+                    # pricing_response = self.pricing_agent.run({
+                    #     "location": location,
+                    #     "start_date": start_date,
+                    #     "end_date": end_date,
+                    #     "car_type": car_type
+                    # })
+                    pricing_response = f"Simulated pricing response for intent: {intent}"
                     session.update_context("pricing", pricing_response)
                     responses.append(pricing_response)
                     session.completed_tasks.add("pricing")
+                    print(f"Session context updated with pricing: {session.context}")  # Log context update
+
+            # Log the current session state after each intent is processed
+            print(f"Current state for user '{user_id}': {session.current_state}")
+            print(f"Completed tasks for user '{user_id}': {session.completed_tasks}")
 
         return " ".join(responses)
 
@@ -84,5 +97,5 @@ class SupervisorAgent:
         detected_intents = [intent for intent, score in zip(result["labels"], result["scores"]) if score > 0.6]  # Set threshold as needed
         return detected_intents
 
-# Initialize the supervisor agent with each specific agent
+# Initialize the supervisor agent with each specific agent (although not used here due to commenting out)
 supervisor_agent = SupervisorAgent(location_agent, availability_agent, pricing_agent)
