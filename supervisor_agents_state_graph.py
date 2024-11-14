@@ -49,7 +49,7 @@ class SupervisorAgent:
                     session.update_context("location", location_response)
                     responses.append(location_response)
                     session.completed_tasks.add("location")
-                    print(f"Session context updated with location: {session.context}")  # Log context update
+                    print(f"localtion intent and the session is {session.context}")  # Log context update
             
             elif intent == "availability" and "availability" not in session.completed_tasks:
                 if session.transition_state("availability"):
@@ -64,7 +64,7 @@ class SupervisorAgent:
                     session.update_context("availability", availability_response)
                     responses.append(availability_response)
                     session.completed_tasks.add("availability")
-                    print(f"Session context updated with availability: {session.context}")  # Log context update
+                    print(f"availability intent and the session {session.context}")  # Log context update
 
             elif intent == "pricing" and "pricing" not in session.completed_tasks:
                 if session.transition_state("pricing"):
@@ -83,7 +83,7 @@ class SupervisorAgent:
                     session.update_context("pricing", pricing_response)
                     responses.append(pricing_response)
                     session.completed_tasks.add("pricing")
-                    print(f"Session context updated with pricing: {session.context}")  # Log context update
+                    print(f"pricing intent and the session {session.context}")  # Log context update
 
             # Log the current session state after each intent is processed
             print(f"Current state for user '{user_id}': {session.current_state}")
